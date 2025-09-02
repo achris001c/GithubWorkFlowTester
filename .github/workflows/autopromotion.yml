@@ -80,7 +80,7 @@ jobs:
                 -H "Content-type: application/json" \
                 --data "{
                 \"channel\":\"C09DX2EU09E\",
-                \"thread_ts\":\"${{ steps.slack-root.outputs.ts }}\",
+                \"thread_ts\":\"${{ steps.initialSlackPost.outputs.ts }}\",
                 \"text\":\":stop_sign: Production PR created: <$pr_url|PR #$pr_number>. Please review and merge manually. <@U12345678> <@U87654321>\"
                 }" \
                 https://slack.com/api/chat.postMessage
@@ -93,7 +93,7 @@ jobs:
                 -H "Content-type: application/json" \
                 --data "{
                 \"channel\":\"C09DX2EU09E\",
-                \"thread_ts\":\"${{ steps.slack-root.outputs.ts }}\",
+                \"thread_ts\":\"${{ steps.initialSlackPost.outputs.ts }}\",
                 \"text\":\":white_check_mark: PR <$pr_url|#$pr_number> auto-merged from *$source* → *$target*\"
               }" \
               https://slack.com/api/chat.postMessage
@@ -105,3 +105,5 @@ jobs:
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
           GH_TOKEN: ${{ secrets.AUTO_PROMOTION_GIT_TOKEN }}
+
+
