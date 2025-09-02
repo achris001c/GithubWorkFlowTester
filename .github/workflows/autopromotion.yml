@@ -81,11 +81,20 @@ jobs:
                 --data "{
                 \"channel\":\"C09DX2EU09E\",
                 \"thread_ts\":\"${{ steps.initialSlackPost.outputs.ts }}\",
-                \"text\":\":red_circle: Production PR created: <$pr_url|PR #$pr_number>. Please review and merge manually. <@U12345678> <@U87654321>\"
+                \"text\":\"Production PR created: <$pr_url|PR #$pr_number>. Please review and merge manually. <U02AKJL6VCJ> :red_circle:\"
                 }" \
                 https://slack.com/api/chat.postMessage
             else
                 # Auto-merge for lower environments
+                for i in {1..10}; do
+                  state=$(gh pr view "$pr_number" --json mergeable --jq .mergeable)
+                  echo "Mergeable state: $state"
+                  if [[ "$state" != "UNKNOWN" ]]; then
+                  break
+                  fi
+                  sleep 5
+                done
+          
                 gh pr merge "$pr_number" --merge --auto
 
                 curl -s -X POST \
@@ -94,7 +103,7 @@ jobs:
                 --data "{
                 \"channel\":\"C09DX2EU09E\",
                 \"thread_ts\":\"${{ steps.initialSlackPost.outputs.ts }}\",
-                \"text\":\":white_check_mark: PR <$pr_url|#$pr_number> auto-merged from *$source* → *$target*\"
+                \"text\":\"PR <$pr_url|#$pr_number> auto-merged from *$source* → *$target*\ :white_check_mark:"
               }" \
               https://slack.com/api/chat.postMessage
             fi
