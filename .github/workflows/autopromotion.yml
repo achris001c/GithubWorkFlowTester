@@ -1,5 +1,9 @@
 name: Auto Promote Code to Higher Environments if auto-promote-changes-till-prod Label is present
 
+permissions:
+  contents: write
+  pull-requests: write
+
 on:
   pull_request:
     types: [closed]
