@@ -1,0 +1,107 @@
+name: Auto Promote Code to Higher Environments if auto-promote-changes-till-prod Label is present
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - master
+      - pre-staging
+      - staging
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: auto-promotion-${{ github.ref }}   # unique per branch, or use a constant for all runs
+  cancel-in-progress: true
+
+jobs:
+  promote:
+    if: >
+      github.event.pull_request.merged == true &&
+      contains(github.event.pull_request.labels.*.name, 'auto-promote-changes-till-prod')
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Post initial Slack message
+        id: initialSlackPost
+        run: |
+          PR_NUMBER="${{ github.event.pull_request.number }}"
+          PR_TITLE="${{ github.event.pull_request.title }}"
+          MERGE_SHA="${{ github.event.pull_request.merge_commit_sha }}"
+          PR_URL="${{ github.event.pull_request.html_url }}"
+
+          TEXT=":rocket: Initiating Automatic Code Promotion for merged PR #$PR_NUMBER <$PR_URL|$PR_TITLE> (commit $MERGE_SHA)"
+
+          response=$(curl -s -X POST \
+            -H "Authorization: Bearer $SLACK_BOT_TOKEN" \
+            -H "Content-type: application/json" \
+            --data "{\"channel\":\"C09DX2EU09E\",\"text\":\"$TEXT\"}" \
+            https://slack.com/api/chat.postMessage)
+
+          ts=$(echo "$response" | jq -r '.ts')
+          echo "ts=$ts" >> $GITHUB_OUTPUT
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+      - name: Run recursive promotion chain
+        id: promote
+        run: |
+          #!/bin/bash
+          set -e
+
+          # Define the promotion chain
+          declare -A chain=( ["master"]="pre-staging" ["pre-staging"]="staging" ["staging"]="production" )
+          source="${{ github.base_ref }}"
+          thread_ts="${{ steps.slack-root.outputs.ts }}"
+
+          while [ -n "${chain[$source]}" ]; do
+            target="${chain[$source]}"
+            pr_branch="promotion/${source}-to-${target}"
+
+            echo "Creating PR from $source → $target"
+
+            pr_url=$(gh pr create \
+            --base "$target" \
+            --head "$source" \
+            --title "Auto-promotion: $source → $target" \
+            --body "Automated promotion from $source to $target" \
+            --web=false)
+
+            # Get PR details (number + url)
+            pr_number=$(gh pr view "$pr_url" --json number -q .number)
+            pr_url=$(gh pr view "$pr_url" --json url -q .url)
+
+            if [ "$target" = "production" ]; then
+                # Only Create PR for prod
+                curl -s -X POST \
+                -H "Authorization: Bearer $SLACK_BOT_TOKEN" \
+                -H "Content-type: application/json" \
+                --data "{
+                \"channel\":\"C09DX2EU09E\",
+                \"thread_ts\":\"${{ steps.slack-root.outputs.ts }}\",
+                \"text\":\":stop_sign: Production PR created: <$pr_url|PR #$pr_number>. Please review and merge manually. <@U12345678> <@U87654321>\"
+                }" \
+                https://slack.com/api/chat.postMessage
+            else
+                # Auto-merge for lower environments
+                gh pr merge "$pr_number" --merge --auto
+
+                curl -s -X POST \
+                -H "Authorization: Bearer $SLACK_BOT_TOKEN" \
+                -H "Content-type: application/json" \
+                --data "{
+                \"channel\":\"C09DX2EU09E\",
+                \"thread_ts\":\"${{ steps.slack-root.outputs.ts }}\",
+                \"text\":\":white_check_mark: PR <$pr_url|#$pr_number> auto-merged from *$source* → *$target*\"
+              }" \
+              https://slack.com/api/chat.postMessage
+            fi
+
+            # Move to next branch in chain
+            source=$target
+          done
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          GH_TOKEN: ${{ secrets.AUTO_PROMOTION_GIT_TOKEN }}
