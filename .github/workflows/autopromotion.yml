@@ -21,7 +21,7 @@ jobs:
         with:
           payload: |
             {
-              "channel": "#code-auto-promotion",
+              "channel": "C09DX2EU09E",
               "text": ":rocket: An auto promotion PR was created from *${{ steps.set-branches.outputs.source }}* → *${{ steps.set-branches.outputs.target }}* and auto-merge was enabled."
             }
         env:
