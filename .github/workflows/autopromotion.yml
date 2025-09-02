@@ -57,16 +57,17 @@ jobs:
 
             echo "Creating PR from $source → $target"
 
-            # Create PR without labels to avoid triggering workflow
-            pr_response=$(gh pr create \
-              --title "Promotion: $source → $target" \
-              --body "Auto promotion PR from $source → $target" \
-              --base "$target" \
-              --head "$source" \
-              --json number,url)
-
-            pr_number=$(echo "$pr_response" | jq -r '.number')
-            pr_url=$(echo "$pr_response" | jq -r '.url')
+            pr_url=$(gh pr create \
+            --base "$target" \
+            --head "$source" \
+            --title "Auto-promotion: $source → $target" \
+            --body "Automated promotion from $source to $target" \
+            --fill \
+            --web=false)
+          
+            # Get PR details (number + url)
+            pr_number=$(gh pr view "$pr_url" --json number -q .number)
+            pr_url=$(gh pr view "$pr_url" --json url -q .url)
 
             if [ "$target" = "production" ]; then
                 # Only Create PR for prod
