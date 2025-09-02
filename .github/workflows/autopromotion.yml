@@ -104,7 +104,7 @@ jobs:
                   --data "{
                   \"channel\":\"C09DX2EU09E\",
                   \"thread_ts\":\"${{ steps.initialSlackPost.outputs.ts }}\",
-                  \"text\":\"Unable to Merge PR : <$pr_url|PR #$pr_number>. Please review and merge manually. <@U02AKJL6VCJ> :red_circle:\"
+                  \"text\":\"Unable to Merge PR : <$pr_url|PR #$pr_number>. Please review and merge manually. <@U02AKJL6VCJ> <@UQ45YAHPB> :red_circle:\"
                   }" \
                   https://slack.com/api/chat.postMessage
                   continue
