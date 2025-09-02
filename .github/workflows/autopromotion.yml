@@ -87,14 +87,14 @@ jobs:
             else
                 # Auto-merge for lower environments
                 for i in {1..10}; do
-                  state=$(gh pr view "$pr_number" --json mergeable --jq .mergeable)
+                  state=$(gh pr view "$pr_url" --json mergeable --jq .mergeable)
                   echo "Mergeable state: $state"
                   if [[ "$state" != "UNKNOWN" ]]; then
                   break
                   fi
                   sleep 5
                 done
-          
+
                 gh pr merge "$pr_number" --merge --auto
 
                 curl -s -X POST \
@@ -114,5 +114,3 @@ jobs:
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
           GH_TOKEN: ${{ secrets.AUTO_PROMOTION_GIT_TOKEN }}
-
-
