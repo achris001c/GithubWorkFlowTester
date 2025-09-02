@@ -81,7 +81,7 @@ jobs:
                 --data "{
                 \"channel\":\"C09DX2EU09E\",
                 \"thread_ts\":\"${{ steps.initialSlackPost.outputs.ts }}\",
-                \"text\":\":stop_sign: Production PR created: <$pr_url|PR #$pr_number>. Please review and merge manually. <@U12345678> <@U87654321>\"
+                \"text\":\":red_circle: Production PR created: <$pr_url|PR #$pr_number>. Please review and merge manually. <@U12345678> <@U87654321>\"
                 }" \
                 https://slack.com/api/chat.postMessage
             else
