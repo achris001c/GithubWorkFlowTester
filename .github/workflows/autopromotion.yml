@@ -25,6 +25,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
       - name: Post initial Slack message
         id: initialSlackPost
         run: |
@@ -54,7 +56,7 @@ jobs:
           # Define the promotion chain
           declare -A chain=( ["master"]="pre-staging" ["pre-staging"]="staging" ["staging"]="production" )
           source="${{ github.base_ref }}"
-          thread_ts="${{ steps.slack-root.outputs.ts }}"
+          thread_ts="${{ steps.initialSlackPost.outputs.ts }}"
 
           while [ -n "${chain[$source]}" ]; do
             target="${chain[$source]}"
@@ -66,8 +68,7 @@ jobs:
             --base "$target" \
             --head "$source" \
             --title "Auto-promotion: $source → $target" \
-            --body "Automated promotion from $source to $target" \
-            --web=false)
+            --body "Automated promotion from $source to $target")
 
             # Get PR details (number + url)
             pr_number=$(gh pr view "$pr_url" --json number -q .number)
@@ -81,19 +82,33 @@ jobs:
                 --data "{
                 \"channel\":\"C09DX2EU09E\",
                 \"thread_ts\":\"${{ steps.initialSlackPost.outputs.ts }}\",
-                \"text\":\"Production PR created: <$pr_url|PR #$pr_number>. Please review and merge manually. <U02AKJL6VCJ> :red_circle:\"
+                \"text\":\"Production PR created: <$pr_url|PR #$pr_number>. Please review and merge manually. <@U02AKJL6VCJ> :red_circle:\"
                 }" \
                 https://slack.com/api/chat.postMessage
             else
                 # Auto-merge for lower environments
                 for i in {1..10}; do
-                  state=$(gh pr view "$pr_number" --json mergeable --jq .mergeable)
+                  state=$(gh pr view "$pr_url" --json mergeable --jq .mergeable)
                   echo "Mergeable state: $state"
                   if [[ "$state" != "UNKNOWN" ]]; then
-                  break
+                    break
                   fi
                   sleep 5
                 done
+
+                if [[ "$state" == "UNKNOWN" ]]; then
+                  echo "PR mergeable state unknown, skipping auto-merge"
+                  curl -s -X POST \
+                  -H "Authorization: Bearer $SLACK_BOT_TOKEN" \
+                  -H "Content-type: application/json" \
+                  --data "{
+                  \"channel\":\"C09DX2EU09E\",
+                  \"thread_ts\":\"${{ steps.initialSlackPost.outputs.ts }}\",
+                  \"text\":\"Unable to Merge PR : <$pr_url|PR #$pr_number>. Please review and merge manually. <@U02AKJL6VCJ> :red_circle:\"
+                  }" \
+                  https://slack.com/api/chat.postMessage
+                  continue
+                fi
           
                 gh pr merge "$pr_number" --merge --auto
 
@@ -103,7 +118,7 @@ jobs:
                 --data "{
                 \"channel\":\"C09DX2EU09E\",
                 \"thread_ts\":\"${{ steps.initialSlackPost.outputs.ts }}\",
-                \"text\":\"PR <$pr_url|#$pr_number> auto-merged from *$source* → *$target*\ :white_check_mark:"
+                \"text\":\"PR <$pr_url|#$pr_number> auto-merged from *$source* → *$target* :white_check_mark:\"
               }" \
               https://slack.com/api/chat.postMessage
             fi
