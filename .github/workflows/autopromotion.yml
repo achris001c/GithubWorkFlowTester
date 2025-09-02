@@ -1,9 +1,5 @@
 name: Auto Promote Code to Higher Environments if auto-promote-changes-till-prod Label is present
 
-permissions:
-  contents: write
-  pull-requests: write
-
 on:
   pull_request:
     types: [closed]
@@ -11,6 +7,10 @@ on:
       - master
       - pre-staging
       - staging
+
+permissions:
+  contents: write
+  pull-requests: write
 
 concurrency:
   group: auto-promotion-${{ github.ref }}   # unique per branch, or use a constant for all runs
@@ -104,5 +104,6 @@ jobs:
           done
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.token }}
+
 
