@@ -63,7 +63,6 @@ jobs:
             --head "$source" \
             --title "Auto-promotion: $source → $target" \
             --body "Automated promotion from $source to $target" \
-            --fill \
             --web=false)
 
             # Get PR details (number + url)
