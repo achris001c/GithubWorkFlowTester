@@ -104,6 +104,4 @@ jobs:
           done
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-          GH_TOKEN: ${{ secrets.token }}
-
-
+          GH_TOKEN: ${{ secrets.AUTO_PROMOTION_GIT_TOKEN }}
