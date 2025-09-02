@@ -21,8 +21,7 @@ jobs:
         with:
           payload: |
             {
-              "channel": "C09DX2EU09E",
-              "text": ":rocket: An auto promotion PR was created from *${{ steps.set-branches.outputs.source }}* → *${{ steps.set-branches.outputs.target }}* and auto-merge was enabled."
+              "text": ":rocket: A promotion PR was created from *${{ steps.set-branches.outputs.source }}* → *${{ steps.set-branches.outputs.target }}* and auto-merge was enabled."
             }
         env:
-          SLACK_BOT_TOKEN: "xoxb-14134705664-9445457896674-CgnhnaaAX8mz0FmKvmJEDRor"
+          SLACK_WEBHOOK_URL: "https://hooks.slack.com/services/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"
