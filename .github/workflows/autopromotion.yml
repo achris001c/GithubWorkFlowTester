@@ -24,6 +24,6 @@ jobs:
               "text": ":rocket: A promotion PR was created from *${{ steps.set-branches.outputs.source }}* → *${{ steps.set-branches.outputs.target }}* and auto-merge was enabled."
             }
         env:
-          SLACK_WEBHOOK_URL: "https://hooks.slack.com/services/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"
+          SLACK_WEBHOOK_URL: ${{secrets.SLACK_WEBHOOK_URL}}
 
       
